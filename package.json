@@ -1,0 +1,22 @@
+{
+  "name": "mini-dev-editor",
+  "version": "1.0.0",
+  "description": "Mini editor de código",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/somadekadane/mini-dev-editor.git"
+  },
+  "author": "Eder Silva",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/somadekadane/mini-dev-editor/issues"
+  },
+  "homepage": "https://github.com/somadekadane/mini-dev-editor#readme",
+  "devDependencies": {
+    "electron": "^35.2.1"
+  }
+}
