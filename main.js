@@ -1,32 +1,30 @@
-const {
-  app,
-  BrowserWindow,
-  nativeTheme,
-  Menu,
-  shell,
-} = require("electron/main");
-const path = require("node:path");
+const { app, BrowserWindow, nativeTheme, Menu, shell, dialog } = require('electron/main');
+const path = require('node:path');
+
+let file = {}
+const fs = require('fs');
+const { ipcMain } = require('electron');
 
 // janela principal
-let win;
+let win
 function createWindow() {
-  nativeTheme.themeSource = "dark";
+  nativeTheme.themeSource = 'dark';
   win = new BrowserWindow({
     width: 1010,
     height: 720,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
   // menu personalizado
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-  win.loadFile("./src/views/index.html");
+  win.loadFile('./src/views/index.html');
 }
 
 // janela sobre
 function aboutWindow() {
-  nativeTheme.themeSource = "dark";
+  nativeTheme.themeSource = 'dark';
   const main = BrowserWindow.getFocusedWindow()
   let about
   if(main) {
@@ -42,153 +40,244 @@ function aboutWindow() {
     })
   }
 
-  about.loadFile("./src/views/sobre.html");
+  about.loadFile('./src/views/sobre.html');
 }
 
 app.whenReady().then(() => {
   createWindow();
   //aboutWindow()
 
-  app.on("activate", () => {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+//reduzir logs não críticos
+app.commandLine.appendSwitch('log-level', '3')
+
 // menu
 const template = [
   {
-    label: "Arquivo",
+    label: 'Arquivo',
     submenu: [
       {
-        label: "Novo",
-        accelerator: "CmdOrCtrl+N",
+        label: 'Novo',
+        accelerator:'CmdOrCtrl+N',
+        click: () => novoArquivo()
       },
       {
-        label: "Abrir",
-        accelerator: "CmdOrCtrl+O",
+        label: 'Abrir',
+        accelerator: 'CmdOrCtrl+O',
+        click: () => abrirArquivo()
       },
       {
-        label: "Salvar",
-        accelerator: "CmdOrCtrl+S",
+        label: 'Salvar',
+        accelerator: 'CmdOrCtrl+S',
+        click: () => salvarArquivo(false)
       },
       {
-        label: "Salvar como",
-        accelerator: "CmdOrCtrl+Shift+S",
+        label: 'Salvar como',
+        accelerator: 'CmdOrCtrl+Shift+S',
+        click: () => salvarArquivo(true)
       },
       {
-        type: "separator",
+        type: 'separator',
       },
       {
-        label: "Sair",
+        label: 'Sair',
         click: () => app.quit(),
-        accelerator: "Alt+F4",
+        accelerator: 'Alt+F4',
       },
     ],
   },
   {
-    label: "Editar",
+    label: 'Editar',
     submenu: [
       {
-        label: "Desfazer",
-        role: "undo",
+        label: 'Desfazer',
+        role: 'undo',
       },
       {
-        label: "Refazer",
-        role: "redo",
+        label: 'Refazer',
+        role: 'redo',
       },
       {
-        type: "separator",
+        type: 'separator',
       },
       {
-        label: "Recortar",
-        role: "cut",
+        label: 'Recortar',
+        role: 'cut',
       },
       {
-        label: "Copiar",
-        role: "copy",
+        label: 'Copiar',
+        role: 'copy',
       },
       {
-        label: "Colar",
-        role: "paste",
+        label: 'Colar',
+        role: 'paste',
       },
     ],
   },
   {
-    label: "Zoom",
+    label: 'Zoom',
     submenu: [
       {
-        label: "Aplicar zoom",
-        role: "zoomIn",
+        label: 'Aplicar zoom',
+        role: 'zoomIn',
       },
       {
-        label: "Reduzir",
-        role: "zoomOut",
+        label: 'Reduzir',
+        role: 'zoomOut',
       },
       {
-        label: "Restaurar o zoom padrão",
-        role: "resetZoom",
+        label: 'Restaurar o zoom padrão',
+        role: 'resetZoom',
       },
     ],
   },
-
+  
   {
-    label: "Cor",
+    label: 'Cor',
     submenu: [
       {
-        label: "Amarelo",
+        label: 'Amarelo',
         click: () => win.webContents.send('set-color', "var(--amarelo")
       },
       {
-        label: "Azul",
+        label: 'Azul',
         click: () => win.webContents.send('set-color', "var(--azul")
       },
       {
-        label: "Laranja",
+        label: 'Laranja',
         click: () => win.webContents.send('set-color', "var(--laranja")
       },
       {
-        label: "Pink",
+        label: 'Pink',
         click: () => win.webContents.send('set-color', "var(--pink")
       },
       {
-        label: "Roxo",
+        label: 'Roxo',
         click: () => win.webContents.send('set-color', "var(--roxo")
       },
       {
-        label: "Verde",
+        label: 'Verde',
         click: () => win.webContents.send('set-color', "var(--verde")
       },
       {
-        type: "separator",
+        type: 'separator',
       },
       {
-        label: "Restaurar a cor padrão",
+        label: 'Restaurar a cor padrão',
         click: () => win.webContents.send('set-color', "var(--cinzaClaro")
       },
     ],
   },
   {
-    label: "Ajuda",
+      label: 'Ferramentas',
+      submenu: [
+          {
+              label: 'DevTools',
+              role: 'toggleDevTools'
+          }
+      ]
+  },
+  {
+    label: 'Ajuda',
     submenu: [
       {
-        label: "Repositório",
-        click: () =>
-          shell.openExternal(
-            "https://github.com/somadekadane/mini-dev-editor.git"
-          ),
+        label: 'Repositório',
+        click: () => shell.openExternal("https://github.com/somadekadane/mini-dev-editor.git"),
       },
       {
-        label: "Sobre",
+        label:'Sobre',
         click: () => aboutWindow()
       },
     ],
   },
 ];
+
+// Novo Arquivo
+function novoArquivo() {
+    file = {
+        name: "Sem título",
+        content: "",
+        saved: false,
+        path: app.getPath('documents') + 'Sem título'
+    }
+    win.webContents.send('set-file', file)
+}
+
+
+// Abrir arquivo
+async function abrirArquivo() {
+  try {
+      const dialogFile = await dialog.showOpenDialog({
+        defaultPath: '',
+        properties: ['openFile']
+      })
+      if (dialogFile.canceled) {
+          return false
+      } else {
+          const filePath = dialogFile.filePaths[0]
+          const fileContent = fs.readFileSync(filePath, 'utf-8')
+          file = {
+              name: path.basename(filePath),
+              content: fileContent,
+              saved: true,
+              path: filePath
+          }
+          win.webContents.send('set-file', file)
+      }
+
+  } catch (error) {
+    console.log(error)
+  }
+  
+}
+
+// salvar | Salvar como
+ipcMain.on('update-content', (event, content) => {
+    file.content = content
+})
+
+async function salvarArquivo(salvarComo) {
+  try {
+      let filePath = file.path
+      if (salvarComo || !file.saved) {
+          const dialogFile = await dialog.showSaveDialog({
+              defaultPath: file.path || app.getPath('documents'),
+              filters: [
+                 {
+                      name: 'Arquivos de texto',
+                      extensions: ['txt']
+                 },
+                 {
+                      name: 'Todos os arquivos',
+                      extensions: ['*']
+
+                 } 
+              ]
+          })
+          if (dialogFile.canceled) {
+              return false
+          }
+          filePath = dialogFile.filePath
+      }
+      fs.writeFileSync(filePath, file.content, 'utf-8')
+      file.path = filePath
+      file.name = path.basename(filePath)
+      file.saved = true
+      win.webContents.send('set-file', file)
+  } catch (error) {
+      console.log(error)
+  }
+  
+}
