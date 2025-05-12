@@ -172,7 +172,7 @@ const template = [
         click: () => win.webContents.send('set-color', "var(--verde")
       },
       {
-        type: 'separator',
+        type: 'separator'
       },
       {
         label: 'Restaurar a cor padrão',
